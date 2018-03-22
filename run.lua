@@ -5,6 +5,7 @@ require 'optim'
 require 'image'
 require 'pl'
 require 'paths'
+require 'xlua' 
 
 print '==> processing options'
 
@@ -69,7 +70,7 @@ filtsize = 5
 poolsize = 2
 normkernel = image.gaussian1D(7)
 
-classes = {'1','2','3','4','5','6','7','8','9','10'}
+classes = {'1','2','3','4','5','6','7','8','9','0'}
 
 model = nn.Sequential()
 
@@ -134,6 +135,14 @@ print '==> define loss'
 print '==> here is the loss function:'
 print(criterion)
 ----------------------------------------------------------------------
+-- CUDA?
+if opt.type == 'cuda' then
+   model:cuda()
+   criterion:cuda()
+end
+-- this matrix records the current confusion across classes
+confusion = optim.ConfusionMatrix(classes)
+
 if model then
    parameters,gradParameters = model:getParameters()
 end
@@ -173,16 +182,7 @@ else
    error('unknown optimization method')
 end
 
--- CUDA?
-if opt.type == 'cuda' then
-   model:cuda()
-   criterion:cuda()
-end
-
--- this matrix records the current confusion across classes
-confusion = optim.ConfusionMatrix(classes)
-
-
+print '==> defining training procedure'
 -- training function
 function train()
    
@@ -287,6 +287,7 @@ function train()
    confusion:zero()
    epoch = epoch + 1
 end
+
 print '==> defining test procedure'
 -- test function
 function test(dataset)
