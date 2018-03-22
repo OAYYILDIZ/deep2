@@ -24,7 +24,7 @@ cmd:option('-model', 'convnet', 'type of model to construct: mlp | convnet')
 -- training:
 cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
 cmd:option('-plot', false, 'live plot')
-cmd:option('-optimization', 'SGD', 'optimization method: SGD | ASGD | CG | LBFGS')
+cmd:option('-loss', 'nll', 'type of loss function to minimize: nll | mse ')
 cmd:option('-learningRate', 1e-3, 'learning rate at t=0')
 cmd:option('-batchSize', 1, 'mini-batch size (1 = pure stochastic)')
 cmd:option('-weightDecay', 0, 'weight decay (SGD only)')
@@ -119,8 +119,44 @@ print(model)
 
 ----------------------------------------------------------------------
 print '==> define loss'
+ --  model:add(nn.LogSoftMax())
+   --criterion = nn.ClassNLLCriterion()
+
+if opt.loss == 'nll' then
    model:add(nn.LogSoftMax())
    criterion = nn.ClassNLLCriterion()
+
+elseif opt.loss == 'mse' then
+   -- for MSE, we add a tanh, to restrict the model's output
+   model:add(nn.Tanh())
+   criterion = nn.MSECriterion()
+   criterion.sizeAverage = false
+
+   if trainData then
+      -- convert training labels:
+      local trsize = (#trainData.labels)[1]
+      local trlabels = torch.Tensor( trsize, noutputs )
+      trlabels:fill(-1)
+      for i = 1,trsize do
+         trlabels[{ i,trainData.labels[i] }] = 1
+      end
+      trainData.labels = trlabels
+
+      -- convert test labels
+      local tesize = (#testData.labels)[1]
+      local telabels = torch.Tensor( tesize, noutputs )
+      telabels:fill(-1)
+      for i = 1,tesize do
+         telabels[{ i,testData.labels[i] }] = 1
+      end
+      testData.labels = telabels
+   end
+
+else
+
+   error('unknown -loss')
+
+end
 print '==> here is the loss function:'
 print(criterion)
 ----------------------------------------------------------------------
