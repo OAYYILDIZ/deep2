@@ -240,8 +240,7 @@ function test(dataset)
 
       -- get new sample
       local input = testData.data[t]
-      if opt.type == 'double' then input = input:double()
-      elseif opt.type == 'cuda' then input = input:cuda() end
+      input = input:cuda()
       local target = testData.labels[t]
 
       -- test sample
