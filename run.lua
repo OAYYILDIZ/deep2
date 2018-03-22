@@ -257,7 +257,7 @@ function train()
       if optimMethod == optim.asgd then
          _,_,average = optimMethod(feval, parameters, optimState)
       else
-         optim.sgd(feval, parameters, optimState)
+         optimMethod(feval, parameters, optimState)
       end
    end
 
