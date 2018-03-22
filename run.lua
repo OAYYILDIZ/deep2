@@ -221,7 +221,6 @@ function train()
 
       -- create closure to evaluate f(X) and df/dX
       local feval = function(x)
-	  collectgarbage()
                        -- get new parameters
                        if x ~= parameters then
                           parameters:copy(x)
@@ -292,7 +291,7 @@ end
 
 print '==> defining test procedure'
 -- test function
-function test(dataset)
+function test()
     -- local vars
    local time = sys.clock()
 
