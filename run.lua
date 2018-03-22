@@ -44,6 +44,7 @@ elseif opt.type == 'cuda' then
    require 'cunn'
    torch.setdefaulttensortype('torch.FloatTensor')
 end
+func=0
 if opt.func == 'tanh' then
    func=nn.Sigmoid()
 elseif opt.func == 'sigmoid' then
