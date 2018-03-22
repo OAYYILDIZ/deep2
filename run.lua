@@ -220,6 +220,7 @@ function train()
 
       -- create closure to evaluate f(X) and df/dX
       local feval = function(x)
+	  collectgarbage()
                        -- get new parameters
                        if x ~= parameters then
                           parameters:copy(x)
@@ -258,7 +259,7 @@ function train()
       if optimMethod == optim.asgd then
          _,_,average = optimMethod(feval, parameters, optimState)
       else
-         optimMethod(feval, parameters, optimState)
+         optim.sgd(feval, parameters, optimState)
       end
    end
 
