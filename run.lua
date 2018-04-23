@@ -62,11 +62,9 @@ width = 32
 height = 32
 ninputs = nfeats*width*height
 
--- number of hidden units (for MLP only):
-nhiddens = ninputs / 2
 
 -- hidden units, filter sizes (for ConvNet only):
-nstates = {64,64,128}
+nstates = {20,50,500}
 filtsize = 5
 poolsize = 2
 normkernel = image.gaussian1D(7)
@@ -76,8 +74,6 @@ classes = {'1','2','3','4','5','6','7','8','9','0'}
 model = nn.Sequential()
 
 print '==> construct model'
-
-   if opt.type == 'cuda' then
       -- stage 1 : filter bank -> squashing -> L2 pooling -> normalization
       model:add(nn.SpatialConvolutionMM(nfeats, nstates[1], filtsize, filtsize))
       model:add(nn.ReLU())
@@ -93,70 +89,15 @@ print '==> construct model'
       model:add(nn.Linear(nstates[2]*filtsize*filtsize, nstates[3]))
       model:add(nn.ReLU())
       model:add(nn.Linear(nstates[3], noutputs))
-
-   else
-      -- stage 1 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nfeats, nstates[1], filtsize, filtsize))
-      model:add(nn.ReLU())
-      model:add(nn.SpatialLPPooling(nstates[1],2,poolsize,poolsize,poolsize,poolsize))
-      model:add(nn.SpatialSubtractiveNormalization(nstates[1], normkernel))
-
-      -- stage 2 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nstates[1], nstates[2], filtsize, filtsize))
-      model:add(nn.ReLU())
-      model:add(nn.SpatialLPPooling(nstates[2],2,poolsize,poolsize,poolsize,poolsize))
-      model:add(nn.SpatialSubtractiveNormalization(nstates[2], normkernel))
-
-      -- stage 3 : standard 2-layer neural network
-      model:add(nn.Reshape(nstates[2]*filtsize*filtsize))
-      model:add(nn.Linear(nstates[2]*filtsize*filtsize, nstates[3]))
-      model:add(nn.ReLU())
-      model:add(nn.Linear(nstates[3], noutputs))
-   end
-
 print '==> here is the model:'
 print(model)
 
 ----------------------------------------------------------------------
 print '==> define loss'
- --  model:add(nn.LogSoftMax())
-   --criterion = nn.ClassNLLCriterion()
-
-if opt.loss == 'nll' then
    model:add(nn.LogSoftMax())
    criterion = nn.ClassNLLCriterion()
 
-elseif opt.loss == 'mse' then
-   -- for MSE, we add a tanh, to restrict the model's output
-   model:add(nn.Tanh())
-   criterion = nn.MSECriterion()
-   criterion.sizeAverage = false
 
-   if trainData then
-      -- convert training labels:
-      local trsize = (#trainData.labels)[1]
-      local trlabels = torch.Tensor( trsize, noutputs )
-      trlabels:fill(-1)
-      for i = 1,trsize do
-         trlabels[{ i,trainData.labels[i] }] = 1
-      end
-      trainData.labels = trlabels
-
-      -- convert test labels
-      local tesize = (#testData.labels)[1]
-      local telabels = torch.Tensor( tesize, noutputs )
-      telabels:fill(-1)
-      for i = 1,tesize do
-         telabels[{ i,testData.labels[i] }] = 1
-      end
-      testData.labels = telabels
-   end
-
-else
-
-   error('unknown -loss')
-
-end
 print '==> here is the loss function:'
 print(criterion)
 ----------------------------------------------------------------------
