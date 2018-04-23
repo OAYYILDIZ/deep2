@@ -6,6 +6,7 @@ require 'image'
 require 'pl'
 require 'paths'
 require 'xlua' 
+require 'cunn'
 
 print '==> processing options'
 
@@ -35,33 +36,19 @@ cmd:option('-type', 'double', 'type: double | float | cuda')
 cmd:text()
 opt = cmd:parse(arg or {})
 
-if opt.type == 'float' then
-   print('==> switching to floats')
-   torch.setdefaulttensortype('torch.FloatTensor')
-elseif opt.type == 'cuda' then
-   print('==> switching to CUDA')
-   require 'cunn'
-   torch.setdefaulttensortype('torch.FloatTensor')
-end
-
+torch.setdefaulttensortype('torch.FloatTensor')
 torch.setnumthreads(opt.threads)
 torch.manualSeed(opt.seed)
 dofile '1_data.lua'
 ----------------------------------------------------------------------
-print '==> define parameters'
 
--- Log results to files
 trainLogger = optim.Logger(paths.concat(opt.save, 'train.log'))
 testLogger = optim.Logger(paths.concat(opt.save, 'test.log'))
 -- 10-class problem
 noutputs = 10
 
 -- input dimensions
-nfeats = 1
-width = 32
-height = 32
-ninputs = nfeats*width*height
-
+ninputs = 1*32*32
 
 -- hidden units, filter sizes (for ConvNet only):
 nstates = {20,50,500}
@@ -75,37 +62,32 @@ model = nn.Sequential()
 
 print '==> construct model'
       -- stage 1 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nfeats, nstates[1], filtsize, filtsize))
+      model:add(nn.SpatialConvolutionMM(1, 20, 5, 5))
       model:add(nn.ReLU())
-      model:add(nn.SpatialMaxPooling(poolsize,poolsize,poolsize,poolsize))
+      model:add(nn.SpatialMaxPooling(2,2,2,2))
 
       -- stage 2 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nstates[1], nstates[2], filtsize, filtsize))
+      model:add(nn.SpatialConvolutionMM(20, 50, 5, 5))
       model:add(nn.ReLU())
-      model:add(nn.SpatialMaxPooling(poolsize,poolsize,poolsize,poolsize))
+      model:add(nn.SpatialMaxPooling(2,2,2,2))
 
       -- stage 3 : standard 2-layer neural network
-      model:add(nn.View(nstates[2]*filtsize*filtsize))
-      model:add(nn.Linear(nstates[2]*filtsize*filtsize, nstates[3]))
+      model:add(nn.View(50*5*5))
+      model:add(nn.Linear(50*5*5, 500))
       model:add(nn.ReLU())
-      model:add(nn.Linear(nstates[3], noutputs))
+      model:add(nn.Linear(500, 10))
+
 print '==> here is the model:'
 print(model)
 
 ----------------------------------------------------------------------
 print '==> define loss'
-   model:add(nn.LogSoftMax())
-   criterion = nn.ClassNLLCriterion()
-
-
-print '==> here is the loss function:'
-print(criterion)
+  -- model:add(nn.LogSoftMax())
+  -- criterion = nn.ClassNLLCriterion()
+criterion = nn.CrossEntropyCriterion()
 ----------------------------------------------------------------------
--- CUDA?
-if opt.type == 'cuda' then
    model:cuda()
    criterion:cuda()
-end
 -- this matrix records the current confusion across classes
 confusion = optim.ConfusionMatrix(classes)
 
