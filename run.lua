@@ -82,9 +82,9 @@ print(model)
 
 ----------------------------------------------------------------------
 print '==> define loss'
-  -- model:add(nn.LogSoftMax())
-  -- criterion = nn.ClassNLLCriterion()
-criterion = nn.CrossEntropyCriterion()
+   model:add(nn.LogSoftMax())
+   criterion = nn.ClassNLLCriterion()
+--criterion = nn.CrossEntropyCriterion()
 ----------------------------------------------------------------------
    model:cuda()
    criterion:cuda()
