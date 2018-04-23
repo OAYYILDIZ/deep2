@@ -75,20 +75,22 @@ model = nn.Sequential()
 
 print '==> construct model'
       -- stage 1 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nfeats, nstates[1], filtsize, filtsize))
+      model:add(nn.SpatialConvolutionMM(1, 6, filtsize, filtsize))
       model:add(nn.ReLU())
       model:add(nn.SpatialMaxPooling(poolsize,poolsize,poolsize,poolsize))
 
       -- stage 2 : filter bank -> squashing -> L2 pooling -> normalization
-      model:add(nn.SpatialConvolutionMM(nstates[1], nstates[2], filtsize, filtsize))
+      model:add(nn.SpatialConvolutionMM(6, 16, filtsize, filtsize))
       model:add(nn.ReLU())
       model:add(nn.SpatialMaxPooling(poolsize,poolsize,poolsize,poolsize))
 
       -- stage 3 : standard 2-layer neural network
-      model:add(nn.View(nstates[2]*filtsize*filtsize))
-      model:add(nn.Linear(nstates[2]*filtsize*filtsize, nstates[3]))
+      model:add(nn.View(16*filtsize*filtsize))
+      model:add(nn.Linear(16*filtsize*filtsize, 120))
       model:add(nn.ReLU())
-      model:add(nn.Linear(nstates[3], noutputs))
+      model:add(nn.Linear(120, 84))
+      model:add(nn.ReLU())
+      model:add(nn.Linear(84, noutputs))
 print '==> here is the model:'
 print(model)
 
